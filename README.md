@@ -7,29 +7,38 @@
 
 ## 当前实现
 
-### 1. 传输与内存
+### 1. 核心抽象
+- `core.hpp`：`Node`、`Channel`、QoS 抽象封装。
+
+### 2. 传输与内存
+- `transport.hpp`：统一传输接口 `ITransport`，提供 `ShmTransport` / `UdpTransport`。
 - `ShmSegment`：基于 POSIX `shm_open + mmap` 的共享内存段封装（RAII）。
 - `MessageHeader` / `MessageView`：固定头 + payload 视图，便于零拷贝传递。
 - `MemoryPool`：固定槽位内存池，支持预分配与槽位回收，避免热路径 `new/delete`。
 
-### 2. 队列
+### 3. 队列
 - `SpscRingBuffer<T, Capacity>`：无锁 SPSC 环形队列，单生产者/单消费者场景优先。
 
-### 3. 发布订阅核心
+### 4. 发布订阅核心
 - `Broker`：线程安全 topic 路由与订阅管理。
 - `Publisher` / `Subscriber`：简化的 pub/sub API，支持 QoS 配置结构。
 
-### 4. 发现与路由
+### 5. 发现与路由
 - `StaticTopology`：读取静态拓扑配置（CSV），提供 topic -> channel 映射查询。
 - `HeartbeatMonitor`：进程心跳记录与超时节点检测。
 
-### 5. 调度执行
+### 6. 调度执行
 - `Executor`：单工作线程执行器，提供 `post`/`stop`，用于隔离回调执行线程。
 
-### 6. 可观测性
+### 7. 可观测性
 - `Metrics`：内建发布/投递/丢弃计数与最近延迟记录。
 
-### 7. 最小 QoS 模型
+### 8. Protobuf 编解码
+- 新增 `proto/lwipc_frame.proto`。
+- `proto_codec.hpp`：在启用 Protobuf 时，支持 `MessageView` 的 protobuf 编码与头部解码。
+- CMake 默认开启 `LWIPC_ENABLE_PROTOBUF=ON`，若环境存在 protobuf 则自动启用。
+
+### 9. 最小 QoS 模型
 - `Reliability`: `BestEffort` / `Reliable`
 - `Durability`: `Volatile` / `TransientLocal`
 - `keep_last`
@@ -41,30 +50,40 @@
 ├── CMakeLists.txt
 ├── include/lwipc
 │   ├── broker.hpp
+│   ├── core.hpp
 │   ├── executor.hpp
 │   ├── heartbeat.hpp
 │   ├── memory_pool.hpp
 │   ├── message.hpp
 │   ├── metrics.hpp
+│   ├── proto_codec.hpp
 │   ├── ring_buffer_spsc.hpp
 │   ├── shm_segment.hpp
-│   └── topology.hpp
+│   ├── topology.hpp
+│   └── transport.hpp
+├── proto
+│   └── lwipc_frame.proto
 ├── src
 │   ├── broker.cpp
 │   ├── executor.cpp
 │   ├── heartbeat.cpp
 │   ├── memory_pool.cpp
+│   ├── proto_codec.cpp
 │   ├── shm_segment.cpp
-│   └── topology.cpp
+│   ├── topology.cpp
+│   └── transport.cpp
 └── tests
     ├── test_broker.cpp
+    ├── test_core.cpp
     ├── test_executor.cpp
     ├── test_heartbeat.cpp
     ├── test_memory_pool.cpp
     ├── test_metrics.cpp
+    ├── test_proto_codec.cpp
     ├── test_ringbuffer.cpp
     ├── test_shm.cpp
-    └── test_topology.cpp
+    ├── test_topology.cpp
+    └── test_transport.cpp
 ```
 
 ## 构建与测试
@@ -91,6 +110,12 @@ ctest --test-dir build --output-on-failure
 - 新增发现与路由基础：`StaticTopology`（静态拓扑加载 + topic 查询）。
 - 新增健康检测基础：`HeartbeatMonitor`（心跳记录 + 超时检测）。
 - 新增 2 个测试：`test_topology`、`test_heartbeat`。
+
+### 2026-04-14 / 第 4 次
+- 新增 `core.hpp`：`Node`、`Channel` 抽象。
+- 新增 `transport.hpp`：统一传输接口 + `ShmTransport` / `UdpTransport`。
+- 接入 protobuf：新增 `.proto` 文件与 `proto_codec`（受 `LWIPC_ENABLE_PROTOBUF` 控制）。
+- 新增 2 个测试：`test_core`、`test_transport`，并在有 protobuf 时启用 `test_proto_codec`。
 
 ## 下一步建议
 
