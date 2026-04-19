@@ -21,32 +21,34 @@ void test_basic_rwlock() {
   assert(lock.reader_count() == 0);
   
   // 测试读锁
-  ReadLockGuard read_guard(lock);
-  assert(read_guard.owns_lock());
-  assert(lock.reader_count() == 1);
-  assert(!lock.is_write_locked());
+  {
+    ReadLockGuard read_guard(lock);
+    assert(read_guard.owns_lock());
+    assert(lock.reader_count() == 1);
+    assert(!lock.is_write_locked());
+    
+    // 多个读者
+    {
+      ReadLockGuard read_guard2(lock);
+      assert(read_guard2.owns_lock());
+      assert(lock.reader_count() == 2);
+    }
+    
+    // 内层读锁释放后，外层读锁仍然持有
+    assert(lock.reader_count() == 1);
+  }
   
-  // 多个读者
-  ReadLockGuard read_guard2(lock);
-  assert(read_guard2.owns_lock());
-  assert(lock.reader_count() == 2);
-  
-  // 释放一个读锁
-  read_guard.~ReadLockGuard();
-  assert(lock.reader_count() == 1);
-  
-  // 释放另一个读锁
-  read_guard2.~ReadLockGuard();
+  // 所有读锁释放后，读者计数应归零
   assert(lock.reader_count() == 0);
   
   // 测试写锁
-  WriteLockGuard write_guard(lock);
-  assert(write_guard.owns_lock());
-  assert(lock.is_write_locked());
-  assert(lock.reader_count() == 0);
+  {
+    WriteLockGuard write_guard(lock);
+    assert(write_guard.owns_lock());
+    assert(lock.is_write_locked());
+    assert(lock.reader_count() == 0);
+  }
   
-  // 释放写锁
-  write_guard.~WriteLockGuard();
   assert(!lock.is_write_locked());
   assert(lock.reader_count() == 0);
   
