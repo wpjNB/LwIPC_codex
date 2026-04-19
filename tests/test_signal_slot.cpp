@@ -54,7 +54,8 @@ void test_multiple_slots() {
     assert(signal.getConnectionCount() == 3);
     
     signal.emit(5.0);
-    assert(sum == 15.0);  // 5 + 5*2 = 15
+    // 执行顺序：sum += 5 (sum=5), call_count++, sum *= 2 (sum=10), call_count++
+    assert(sum == 10.0);  // (0 + 5) * 2 = 10
     assert(call_count == 2);
     
     std::cout << "PASSED" << std::endl;

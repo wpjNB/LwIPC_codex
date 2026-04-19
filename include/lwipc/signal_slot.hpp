@@ -25,29 +25,21 @@ namespace lwipc {
 // 连接句柄，用于断开特定连接
 struct Connection {
     uint64_t id;
-    bool valid;
+    std::atomic<bool>* valid_ptr;  // 指向槽的valid标志
     std::weak_ptr<void> slot_ref;  // 引用槽对象
     
-    Connection() : id(0), valid(false) {}
-    Connection(uint64_t id_) : id(id_), valid(true) {}
-    Connection(uint64_t id_, std::shared_ptr<void> slot) : id(id_), valid(true), slot_ref(slot) {}
+    Connection() : id(0), valid_ptr(nullptr) {}
+    Connection(uint64_t id_, std::atomic<bool>* valid) : id(id_), valid_ptr(valid) {}
+    Connection(uint64_t id_, std::atomic<bool>* valid, std::shared_ptr<void> slot) 
+        : id(id_), valid_ptr(valid), slot_ref(slot) {}
     
     void disconnect() { 
-        if (valid) {
-            valid = false;
-            // 尝试通过 slot_ref 获取槽并标记为无效
-            if (auto slot = slot_ref.lock()) {
-                // 槽仍然存在，但我们在 Signal::disconnect 中处理实际的无效标记
-            }
+        if (valid_ptr) {
+            valid_ptr->store(false, std::memory_order_release);
         }
     }
     bool isConnected() const { 
-        if (!valid) return false;
-        // 检查槽是否仍然有效
-        if (auto slot = slot_ref.lock()) {
-            return true;
-        }
-        return false;
+        return valid_ptr && valid_ptr->load(std::memory_order_acquire);
     }
 };
 
@@ -92,7 +84,7 @@ public:
         slots_.push_back(entry);
         active_count_.fetch_add(1, std::memory_order_relaxed);
         
-        return Connection(id, entry);
+        return Connection(id, &entry->valid, entry);
     }
     
     // 简化版connect（使用lambda或std::function）
@@ -101,8 +93,8 @@ public:
     }
     
     // 断开连接
-    void disconnect(Connection conn) {
-        if (!conn.valid) return;
+    void disconnect(Connection conn) override {
+        if (!conn.valid_ptr) return;
         
         std::lock_guard<std::mutex> lock(mutex_);
         for (auto& slot : slots_) {
@@ -115,35 +107,9 @@ public:
         }
     }
     
-    // 断开连接（通过 Connection 对象方法）
+    // 断开连接（通过 Connection 引用，更新其状态）
     void disconnectConnection(Connection& conn) {
-        if (!conn.valid) return;
-        
-        std::lock_guard<std::mutex> lock(mutex_);
-        for (auto& slot : slots_) {
-            if (slot->id == conn.id) {
-                if (slot->valid.exchange(false)) {
-                    active_count_.fetch_sub(1, std::memory_order_relaxed);
-                }
-                conn.valid = false;  // 更新传入的 Connection 对象
-                return;
-            }
-        }
-    }
-    
-    // 重载 disconnect 以支持通过 ID 断开（基类接口）
-    void disconnect(Connection conn) override {
-        if (!conn.valid) return;
-        
-        std::lock_guard<std::mutex> lock(mutex_);
-        for (auto& slot : slots_) {
-            if (slot->id == conn.id) {
-                if (slot->valid.exchange(false)) {
-                    active_count_.fetch_sub(1, std::memory_order_relaxed);
-                }
-                return;
-            }
-        }
+        disconnect(conn);
     }
     
     // 断开所有连接
