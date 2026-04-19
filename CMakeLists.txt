@@ -1,9 +1,11 @@
 cmake_minimum_required(VERSION 3.16)
-project(lwipc VERSION 0.2.0 LANGUAGES CXX)
+project(lwipc VERSION 0.3.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+option(LWIPC_ENABLE_PROTOBUF "Enable protobuf codec support" ON)
 
 add_library(lwipc STATIC
     src/broker.cpp
@@ -16,11 +18,25 @@ add_library(lwipc STATIC
     src/sensor_interface.cpp
     src/bag_recorder.cpp
     src/system_monitor.cpp
+    src/transport.cpp
 )
 
 target_include_directories(lwipc PUBLIC include)
-
 target_compile_options(lwipc PRIVATE -Wall -Wextra -Wpedantic)
+
+if(LWIPC_ENABLE_PROTOBUF)
+  find_package(Protobuf QUIET)
+  if(Protobuf_FOUND)
+    protobuf_generate_cpp(LWIPC_PROTO_SRCS LWIPC_PROTO_HDRS proto/lwipc_frame.proto)
+    target_sources(lwipc PRIVATE src/proto_codec.cpp ${LWIPC_PROTO_SRCS} ${LWIPC_PROTO_HDRS})
+    target_include_directories(lwipc PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
+    target_link_libraries(lwipc PUBLIC protobuf::libprotobuf)
+    target_compile_definitions(lwipc PUBLIC LWIPC_WITH_PROTOBUF)
+    message(STATUS "Protobuf support enabled")
+  else()
+    message(WARNING "Protobuf not found. Build without protobuf codec support.")
+  endif()
+endif()
 
 include(CTest)
 if(BUILD_TESTING)
@@ -83,4 +99,18 @@ if(BUILD_TESTING)
   add_executable(test_monitor tests/test_monitor.cpp)
   target_link_libraries(test_monitor PRIVATE lwipc)
   add_test(NAME monitor COMMAND test_monitor)
+
+  add_executable(test_transport tests/test_transport.cpp)
+  target_link_libraries(test_transport PRIVATE lwipc)
+  add_test(NAME transport COMMAND test_transport)
+
+  add_executable(test_core tests/test_core.cpp)
+  target_link_libraries(test_core PRIVATE lwipc)
+  add_test(NAME core COMMAND test_core)
+
+  if(TARGET protobuf::libprotobuf)
+    add_executable(test_proto_codec tests/test_proto_codec.cpp)
+    target_link_libraries(test_proto_codec PRIVATE lwipc)
+    add_test(NAME proto_codec COMMAND test_proto_codec)
+  endif()
 endif()
