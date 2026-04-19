@@ -112,6 +112,19 @@ ctest --test-dir build --output-on-failure
 - 新增 2 个测试：`test_topology`、`test_heartbeat`。
 
 ### 2026-04-14 / 第 4 次
+- 新增 MPMC 无锁队列：`MpmcRingBuffer<T>`（多生产者多消费者场景）
+  - 基于序列号的无锁算法
+  - 支持 SPSC/MPSC/SPMC/MPMC 所有并发模式
+  - 性能测试：>1.2M msg/s (单生产者单消费者)
+- 新增原子读写锁：`AtomicRWLock`（读多写少场景优化）
+  - 支持多读者并发访问
+  - 写者独占保证
+  - RAII 守卫：`ReadLockGuard` / `WriteLockGuard`
+  - 性能测试：读锁 ~27ns/op，写锁 ~26ns/op
+- 新增 2 个测试：`test_ringbuffer_mpmc`、`test_atomic_rwlock`
+- 总计 10 个单元测试全部通过
+
+### 2026-04-14 / 第 5 次
 - 新增 `core.hpp`：`Node`、`Channel` 抽象。
 - 新增 `transport.hpp`：统一传输接口 + `ShmTransport` / `UdpTransport`。
 - 接入 protobuf：新增 `.proto` 文件与 `proto_codec`（受 `LWIPC_ENABLE_PROTOBUF` 控制）。

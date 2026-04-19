@@ -13,7 +13,11 @@ add_library(lwipc STATIC
     src/heartbeat.cpp
     src/memory_pool.cpp
     src/shm_segment.cpp
+    src/shm_channel.cpp
     src/topology.cpp
+    src/sensor_interface.cpp
+    src/bag_recorder.cpp
+    src/system_monitor.cpp
     src/transport.cpp
 )
 
@@ -67,6 +71,34 @@ if(BUILD_TESTING)
   add_executable(test_heartbeat tests/test_heartbeat.cpp)
   target_link_libraries(test_heartbeat PRIVATE lwipc)
   add_test(NAME heartbeat COMMAND test_heartbeat)
+
+  add_executable(test_ringbuffer_mpmc tests/test_ringbuffer_mpmc.cpp)
+  target_link_libraries(test_ringbuffer_mpmc PRIVATE lwipc)
+  add_test(NAME ringbuffer_mpmc COMMAND test_ringbuffer_mpmc)
+
+  add_executable(test_atomic_rwlock tests/test_atomic_rwlock.cpp)
+  target_link_libraries(test_atomic_rwlock PRIVATE lwipc)
+  add_test(NAME atomic_rwlock COMMAND test_atomic_rwlock)
+
+  add_executable(test_shm_channel tests/test_shm_channel.cpp)
+  target_link_libraries(test_shm_channel PRIVATE lwipc)
+  add_test(NAME shm_channel COMMAND test_shm_channel)
+
+  add_executable(test_signal_slot tests/test_signal_slot.cpp)
+  target_link_libraries(test_signal_slot PRIVATE lwipc)
+  add_test(NAME signal_slot COMMAND test_signal_slot)
+
+  add_executable(test_sensor tests/test_sensor.cpp)
+  target_link_libraries(test_sensor PRIVATE lwipc)
+  add_test(NAME sensor COMMAND test_sensor)
+
+  add_executable(test_bag tests/test_bag.cpp)
+  target_link_libraries(test_bag PRIVATE lwipc)
+  add_test(NAME bag COMMAND test_bag)
+
+  add_executable(test_monitor tests/test_monitor.cpp)
+  target_link_libraries(test_monitor PRIVATE lwipc)
+  add_test(NAME monitor COMMAND test_monitor)
 
   add_executable(test_transport tests/test_transport.cpp)
   target_link_libraries(test_transport PRIVATE lwipc)
