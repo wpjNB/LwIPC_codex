@@ -22,6 +22,22 @@ target_include_directories(lwipc PUBLIC include)
 
 target_compile_options(lwipc PRIVATE -Wall -Wextra -Wpedantic)
 
+# Build examples
+add_executable(example_pubsub examples/example_pubsub.cpp)
+target_link_libraries(example_pubsub PRIVATE lwipc pthread)
+
+add_executable(example_signal_slot examples/example_signal_slot.cpp)
+target_link_libraries(example_signal_slot PRIVATE lwipc pthread)
+
+add_executable(example_sensor examples/example_sensor.cpp)
+target_link_libraries(example_sensor PRIVATE lwipc pthread)
+
+add_executable(example_bag_recorder examples/example_bag_recorder.cpp)
+target_link_libraries(example_bag_recorder PRIVATE lwipc pthread)
+
+add_executable(example_monitor examples/example_monitor.cpp)
+target_link_libraries(example_monitor PRIVATE lwipc pthread)
+
 include(CTest)
 if(BUILD_TESTING)
   add_executable(test_ringbuffer tests/test_ringbuffer.cpp)
