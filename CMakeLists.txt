@@ -108,9 +108,20 @@ if(BUILD_TESTING)
   target_link_libraries(test_core PRIVATE lwipc)
   add_test(NAME core COMMAND test_core)
 
+  # IPC stress test executable
+  add_executable(example_ipc_stress examples/example_ipc_stress.cpp)
+  target_link_libraries(example_ipc_stress PRIVATE pthread rt)
+  
+  # Network bridge test executable
+  add_executable(example_network_bridge examples/example_network_bridge.cpp)
+  target_link_libraries(example_network_bridge PRIVATE pthread)
+
   if(TARGET protobuf::libprotobuf)
     add_executable(test_proto_codec tests/test_proto_codec.cpp)
     target_link_libraries(test_proto_codec PRIVATE lwipc)
     add_test(NAME proto_codec COMMAND test_proto_codec)
   endif()
 endif()
+
+# Install example binaries
+install(TARGETS example_ipc_stress example_network_bridge DESTINATION bin)
