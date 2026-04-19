@@ -7,6 +7,7 @@ namespace lwipc {
 
 class ShmSegment {
  public:
+  ShmSegment() = default;
   ShmSegment(std::string name, std::size_t size);
   ~ShmSegment();
 
@@ -19,10 +20,12 @@ class ShmSegment {
   [[nodiscard]] void* data() const { return addr_; }
   [[nodiscard]] std::size_t size() const { return size_; }
   [[nodiscard]] const std::string& name() const { return name_; }
-
- private:
+  
+  bool create(std::string name, std::size_t size);
+  bool open(std::string name);
   void close();
 
+ private:
   std::string name_;
   std::size_t size_{};
   int fd_{-1};
