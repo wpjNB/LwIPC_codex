@@ -247,7 +247,7 @@ void BagPlayer::close() {
 }
 
 bool BagPlayer::play() {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::unique_lock<std::mutex> lock(mutex_);
     
     if (!file_.is_open() || !callback_) {
         return false;
@@ -261,7 +261,9 @@ bool BagPlayer::play() {
     
     while (playing_ && file_.good()) {
         if (paused_) {
+            lock.unlock();
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            lock.lock();
             continue;
         }
         
@@ -291,6 +293,9 @@ bool BagPlayer::play() {
             break;
         }
         
+        double speed = config_.speed;
+        auto callback = callback_;
+        
         // 时间控制
         if (play_start_time == 0) {
             play_start_time = std::chrono::duration_cast<std::chrono::nanoseconds>(
@@ -300,18 +305,30 @@ bool BagPlayer::play() {
         }
         
         // 计算延迟以维持原始时间间隔
-        uint64_t expected_time = play_start_time + (timestamp - first_msg_time) / config_.speed;
+        uint64_t expected_time = play_start_time + (timestamp - first_msg_time) / speed;
         uint64_t current_time = std::chrono::duration_cast<std::chrono::nanoseconds>(
             std::chrono::steady_clock::now().time_since_epoch()
         ).count();
         
         if (expected_time > current_time) {
             auto sleep_ns = expected_time - current_time;
+            lock.unlock();
             std::this_thread::sleep_for(std::chrono::nanoseconds(sleep_ns));
+            lock.lock();
+            
+            if (!playing_) {
+                break;
+            }
+            
+            if (paused_) {
+                continue;
+            }
         }
         
         // 调用回调
-        callback_(topic, timestamp, data.data(), data.size());
+        lock.unlock();
+        callback(topic, timestamp, data.data(), data.size());
+        lock.lock();
     }
     
     playing_ = false;
