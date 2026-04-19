@@ -1,1 +1,30 @@
+```
+# Build artifacts
 build/
+cmake-build-*/
+Makefile
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+*.exe
+*.out
+
+# Dependencies
+.externalNativeBuild/
+.cmake/
+
+# Tests
+*.gcda
+*.gcno
+coverage/
+
+# Logs
+*.log
+
+# Environment
+.env
+.env.local
+.env.*
+```
