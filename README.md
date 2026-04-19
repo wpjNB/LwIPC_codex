@@ -92,6 +92,19 @@ ctest --test-dir build --output-on-failure
 - 新增健康检测基础：`HeartbeatMonitor`（心跳记录 + 超时检测）。
 - 新增 2 个测试：`test_topology`、`test_heartbeat`。
 
+### 2026-04-14 / 第 4 次
+- 新增 MPMC 无锁队列：`MpmcRingBuffer<T>`（多生产者多消费者场景）
+  - 基于序列号的无锁算法
+  - 支持 SPSC/MPSC/SPMC/MPMC 所有并发模式
+  - 性能测试：>1.2M msg/s (单生产者单消费者)
+- 新增原子读写锁：`AtomicRWLock`（读多写少场景优化）
+  - 支持多读者并发访问
+  - 写者独占保证
+  - RAII 守卫：`ReadLockGuard` / `WriteLockGuard`
+  - 性能测试：读锁 ~27ns/op，写锁 ~26ns/op
+- 新增 2 个测试：`test_ringbuffer_mpmc`、`test_atomic_rwlock`
+- 总计 10 个单元测试全部通过
+
 ## 下一步建议
 
 - 增加 `Unix Domain Socket` 控制面（发现广播/心跳上报/拓扑热更新）

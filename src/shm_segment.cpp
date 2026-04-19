@@ -13,7 +13,7 @@ namespace lwipc {
 namespace {
 std::string normalize_name(std::string name) {
   if (name.empty()) {
-    throw std::invalid_argument("shm name cannot be empty");
+    return "";
   }
   if (name.front() != '/') {
     name.insert(name.begin(), '/');
@@ -69,6 +69,72 @@ ShmSegment& ShmSegment::operator=(ShmSegment&& other) noexcept {
   other.fd_ = -1;
   other.addr_ = nullptr;
   return *this;
+}
+
+bool ShmSegment::create(std::string name, std::size_t size) {
+  name_ = normalize_name(std::move(name));
+  size_ = size;
+  
+  if (name_.empty()) {
+    return false;
+  }
+  
+  if (size_ == 0) {
+    return false;
+  }
+
+  fd_ = shm_open(name_.c_str(), O_CREAT | O_RDWR, 0600);
+  if (fd_ < 0) {
+    return false;
+  }
+
+  if (ftruncate(fd_, static_cast<off_t>(size_)) != 0) {
+    ::close(fd_);
+    fd_ = -1;
+    return false;
+  }
+
+  addr_ = mmap(nullptr, size_, PROT_READ | PROT_WRITE, MAP_SHARED, fd_, 0);
+  if (addr_ == MAP_FAILED) {
+    addr_ = nullptr;
+    ::close(fd_);
+    fd_ = -1;
+    return false;
+  }
+  
+  return true;
+}
+
+bool ShmSegment::open(std::string name) {
+  name_ = normalize_name(std::move(name));
+  
+  if (name_.empty()) {
+    return false;
+  }
+
+  fd_ = shm_open(name_.c_str(), O_RDWR, 0600);
+  if (fd_ < 0) {
+    return false;
+  }
+
+  // 获取共享内存大小
+  struct stat sb;
+  if (fstat(fd_, &sb) != 0) {
+    ::close(fd_);
+    fd_ = -1;
+    return false;
+  }
+  size_ = static_cast<std::size_t>(sb.st_size);
+
+  addr_ = mmap(nullptr, size_, PROT_READ | PROT_WRITE, MAP_SHARED, fd_, 0);
+  if (addr_ == MAP_FAILED) {
+    addr_ = nullptr;
+    ::close(fd_);
+    fd_ = -1;
+    return false;
+  }
+  
+  return true;
 }
 
 void ShmSegment::close() {
