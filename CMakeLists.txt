@@ -19,6 +19,10 @@ add_library(lwipc STATIC
     src/bag_recorder.cpp
     src/system_monitor.cpp
     src/transport.cpp
+    src/node/node.cpp
+    src/node/transmitter.cpp
+    src/node/receiver.cpp
+    src/discovery/service_discovery.cpp
 )
 
 target_include_directories(lwipc PUBLIC include)
@@ -116,6 +120,10 @@ if(BUILD_TESTING)
   add_executable(example_network_bridge examples/example_network_bridge.cpp)
   target_link_libraries(example_network_bridge PRIVATE pthread)
 
+  # Node factory example
+  add_executable(example_node_factory examples/example_node_factory.cpp)
+  target_link_libraries(example_node_factory PRIVATE lwipc pthread)
+
   if(TARGET protobuf::libprotobuf)
     add_executable(test_proto_codec tests/test_proto_codec.cpp)
     target_link_libraries(test_proto_codec PRIVATE lwipc)
@@ -124,4 +132,4 @@ if(BUILD_TESTING)
 endif()
 
 # Install example binaries
-install(TARGETS example_ipc_stress example_network_bridge DESTINATION bin)
+install(TARGETS example_ipc_stress example_network_bridge example_node_factory DESTINATION bin)

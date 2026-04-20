@@ -1,9 +1,7 @@
 ```
 # Build artifacts
-build/
-cmake-build-*/
-Makefile
 *.o
+*.obj
 *.a
 *.so
 *.dylib
@@ -11,14 +9,11 @@ Makefile
 *.exe
 *.out
 
-# Dependencies
-.externalNativeBuild/
-.cmake/
+# CMake build directory
+build/
 
-# Tests
-*.gcda
-*.gcno
-coverage/
+# Dependencies
+vendor/
 
 # Logs
 *.log
@@ -26,5 +21,54 @@ coverage/
 # Environment
 .env
 .env.local
-.env.*
+*.env.*
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*.tmp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Coverage
+coverage/
+htmlcov/
+.coverage
+
+# Python (if present)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# Node (if present)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Virtual environments
+venv/
+.venv/
+ENV/
+
+# Testing
+.pytest_cache/
+.mypy_cache/
+.tox/
+
+# Java/Gradle
+target/
+.gradle/
+*.class
+
+# Go
+*.mod
+*.sum
 ```
